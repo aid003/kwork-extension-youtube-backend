@@ -74,4 +74,4 @@ app.use((err: Error, _req: Request, res: Response) => {
   res.status(400).json({ error: err.message });
 });
 
-app.listen(PORT, () => console.log(`Server on http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Server is running on http://localhost:${PORT}`));
