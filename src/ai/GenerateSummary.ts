@@ -1,37 +1,50 @@
 import { geminiClient } from "./GeminiClient";
 import { prompts } from "./prompts";
-import "dotenv/config";
 
 const model = process.env.GEMINI_MODEL!;
-if (!model) throw new Error("GEMINI_MODEL не задан в .env");
+if (!model) throw new Error("GEMINI_MODEL is missing");
 
-export const generateSummary = async (
-  videoUrl: string,
+/**
+ * Генерирует текстовую сводку для видео‑транскрипта.
+ * В консоль выводится:
+ *   • заголовок вызова и ключевые параметры
+ *   • первые 300 символов промпта и транскрипта
+ *   • полный ответ модели
+ */
+export async function generateSummary(
+  transcript: string,
   language: string,
-  details: string,
-): Promise<string> => {
-  console.log(videoUrl, language, details);
-  console.log("Запрос отправлен");
-  const response = await geminiClient.models.generateContent({
+  detail: string,
+): Promise<string> {
+  /* ---------- build prompt ---------- */
+  const systemPrompt =
+    prompts.summary +
+    `\n\nОбязательно ответь на языке: ${language}\nОбязательно ответь с таким уровнем детализации: ${detail}`;
+
+  /* ---------- logging (request) ---------- */
+  console.log("───────────────────────────────────────");
+  console.log("[Gemini] generateSummary()");
+  console.log("• Language :", language);
+  console.log("• Detail   :", detail);
+  console.log("• Prompt   :", systemPrompt.slice(0, 300), "…");
+  console.log("• Transcript snippet: ", transcript.slice(0, 300), "…");
+
+  /* ---------- call Gemini ---------- */
+  const res = await geminiClient.models.generateContent({
     model,
     contents: [
       {
         role: "user",
-        parts: [
-          {
-            text:
-              prompts.summary +
-              "\n" +
-              `Обязательно ответь на языке: ${language}` +
-              "\n" +
-              `Обязательно раскрой в ответе подобный уровень детализации: ${details}`,
-          },
-          { fileData: { fileUri: videoUrl } },
-        ],
+        parts: [{ text: systemPrompt }, { text: "Transcript:\n" + transcript }],
       },
     ],
   });
 
-  if (!response.text) throw new Error("Empty response from Gemini");
-  return response.text;
-};
+  /* ---------- logging (response) ---------- */
+  if (!res.text) throw new Error("Gemini empty response");
+  console.log("• Gemini response ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓");
+  console.log(res.text);
+  console.log("───────────────────────────────────────");
+
+  return res.text;
+}

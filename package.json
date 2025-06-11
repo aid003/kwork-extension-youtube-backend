@@ -14,10 +14,12 @@
   "packageManager": "pnpm@10.10.0",
   "dependencies": {
     "@google/genai": "^1.4.0",
+    "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^5.1.0"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
     "@types/node": "^22.15.30",
     "ts-node-dev": "^2.0.0",
