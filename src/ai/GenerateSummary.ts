@@ -14,7 +14,7 @@ if (!model) throw new Error("GEMINI_MODEL is missing");
 export async function generateSummary(
   transcript: string,
   language: string,
-  detail: string,
+  detail: string
 ): Promise<string> {
   /* ---------- build prompt ---------- */
   const systemPrompt =

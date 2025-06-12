@@ -2,20 +2,34 @@ import { geminiClient } from "./GeminiClient";
 import { prompts } from "./prompts";
 
 const model = process.env.GEMINI_MODEL!;
+if (!model) throw new Error("GEMINI_MODEL is missing");
 
+/**
+ * Генерирует тайм-стемпы.
+ *
+ * @param transcript Полный текст транскрипта
+ * @param language   Язык ответа (ISO-2)
+ * @param detail     Уровень детализации (concise / standard / detailed)
+ */
 export async function generateTimestamps(
   transcript: string,
   language: string,
+  detail: string = "standard" // ← новый параметр с дефолтом
 ): Promise<string> {
+  const prompt = [
+    prompts.timestamps,
+    `Обязательно ответь на языке: ${language}`,
+    `Обязательно ответь с таким уровнем детализации: ${detail}`,
+    "",
+    "Transcript:\n" + transcript,
+  ].join("\n");
+
   const res = await geminiClient.models.generateContent({
     model,
     contents: [
       {
         role: "user",
-        parts: [
-          { text: prompts.timestamps + `\nLanguage: ${language}` },
-          { text: "Transcript:\n" + transcript },
-        ],
+        parts: [{ text: prompt }],
       },
     ],
   });
