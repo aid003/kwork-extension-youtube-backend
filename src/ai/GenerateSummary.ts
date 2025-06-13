@@ -32,7 +32,6 @@ export async function generateSummary(
   console.log("• Transcript snippet:", transcript.slice(0, 300), "…");
 
   try {
-    /* ---------- call Gemini ---------- */
     const res = await geminiClient.models.generateContent({
       model,
       contents: [
@@ -50,7 +49,6 @@ export async function generateSummary(
       throw new Error("Gemini responded with empty text");
     }
 
-    /* ---------- logging (response) ---------- */
     console.log("• Gemini response ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓");
     console.log(res.text);
     console.log("───────────────────────────────────────");
@@ -62,7 +60,6 @@ export async function generateSummary(
     let errorCode: number | string = "unknown";
     let errorMsg: string = err.message ?? String(err);
 
-    // Попытка извлечь JSON-объект из текста ошибки
     if (typeof err.message === "string") {
       const jsonMatch = err.message.match(/\{[\s\S]*\}$/);
       if (jsonMatch) {
@@ -73,7 +70,7 @@ export async function generateSummary(
             errorMsg = parsed.error.message ?? errorMsg;
           }
         } catch {
-          // игнорируем, если не получилось распарсить
+          console.warn("Failed to parse error JSON:", jsonMatch[0]);
         }
       }
     }
@@ -82,12 +79,10 @@ export async function generateSummary(
     console.log("• Parsed error message:", errorMsg);
     console.log("───────────────────────────────────────");
 
-    // Специальная реакция на перегрузку модели (503)
     if (Number(errorCode) === 503 || errorMsg.includes("overloaded")) {
-      return `⚠️ Сервис перегружен, попробуйте позже (код ${errorCode}).`;
+      return `⚠️ Service is overloaded, please try again later (code ${errorCode}).`;
     }
 
-    // Общая заглушка для остальных ошибок
     return `⚠️ Server of the extension is temporarily unavailable (code ${errorCode}).`;
   }
 }

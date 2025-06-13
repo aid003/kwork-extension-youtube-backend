@@ -14,7 +14,7 @@ if (!model) throw new Error("GEMINI_MODEL is missing");
 export async function generateTimestamps(
   transcript: string,
   language: string,
-  detail: string = "standard" // ← новый параметр с дефолтом
+  detail: string = "standard"
 ): Promise<string> {
   const prompt = [
     prompts.timestamps,
