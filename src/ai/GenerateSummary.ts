@@ -9,9 +9,9 @@ if (!model) throw new Error("GEMINI_MODEL is missing");
  * Логируется:
  *   • ключевые параметры запроса
  *   • начало промпта и транскрипта
- *   • полный ответ модели (или сообщение об ошибке)
- * Если GEMINI возвращает ошибку / пустой текст, возвращается
- * заглушка: «Server of the extension is temporarily unavailable (code 3946)».
+ *   • полный ответ модели
+ * Если GEMINI возвращает ошибку или пустой текст, возвращается
+ * заглушка с описанием проблемы.
  */
 export async function generateSummary(
   transcript: string,
@@ -31,8 +31,8 @@ export async function generateSummary(
   console.log("• Prompt   :", systemPrompt.slice(0, 300), "…");
   console.log("• Transcript snippet:", transcript.slice(0, 300), "…");
 
-  /* ---------- call Gemini ---------- */
   try {
+    /* ---------- call Gemini ---------- */
     const res = await geminiClient.models.generateContent({
       model,
       contents: [
@@ -57,11 +57,37 @@ export async function generateSummary(
 
     return res.text;
   } catch (err: any) {
-    /* ---------- error handling ---------- */
     console.error("[Gemini] error:", err);
+
+    let errorCode: number | string = "unknown";
+    let errorMsg: string = err.message ?? String(err);
+
+    // Попытка извлечь JSON-объект из текста ошибки
+    if (typeof err.message === "string") {
+      const jsonMatch = err.message.match(/\{[\s\S]*\}$/);
+      if (jsonMatch) {
+        try {
+          const parsed = JSON.parse(jsonMatch[0]);
+          if (parsed.error) {
+            errorCode = parsed.error.code ?? parsed.error.status ?? errorCode;
+            errorMsg = parsed.error.message ?? errorMsg;
+          }
+        } catch {
+          // игнорируем, если не получилось распарсить
+        }
+      }
+    }
+
+    console.log("• Parsed error code   :", errorCode);
+    console.log("• Parsed error message:", errorMsg);
     console.log("───────────────────────────────────────");
 
-    // Единообразная заглушка (код 3946)
-    return "⚠️ Server of the extension is temporarily unavailable (code 3946).";
+    // Специальная реакция на перегрузку модели (503)
+    if (Number(errorCode) === 503 || errorMsg.includes("overloaded")) {
+      return `⚠️ Сервис перегружен, попробуйте позже (код ${errorCode}).`;
+    }
+
+    // Общая заглушка для остальных ошибок
+    return `⚠️ Server of the extension is temporarily unavailable (code ${errorCode}).`;
   }
 }

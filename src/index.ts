@@ -1,5 +1,3 @@
-// src/index.ts
-
 import express, { Request, Response } from "express";
 import cors from "cors";
 import { SummarizerRequestPayload, SummarizerResponse } from "./types";
@@ -8,7 +6,6 @@ import { generateTimestamps } from "./ai/GenerateTimestamps";
 import { answerQuestion } from "./ai/AnswerQuestion";
 
 const app = express();
-
 app.use(cors());
 app.use(express.json());
 
@@ -53,8 +50,10 @@ app.post(
   },
 );
 
-app.get("/", (_req, res) => {
-  res.status(200).send("🚀 Server is running");
+app.get("/", (_req, res, next) => {
+  res.status(200);
+  res.send("🚀 Server is running");
 });
 
-export default app;
+const PORT = process.env.PORT ?? 7392;
+app.listen(PORT, () => console.log(`🚀 ⇢ Backend listening on ${PORT}`));
