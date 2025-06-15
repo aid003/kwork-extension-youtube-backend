@@ -1,3 +1,4 @@
+// GenerateSummary.ts
 import { geminiClient } from "./GeminiClient";
 import { prompts } from "./prompts";
 
@@ -5,23 +6,19 @@ const model = process.env.GEMINI_MODEL!;
 if (!model) throw new Error("GEMINI_MODEL is missing");
 
 /**
- * Генерирует текстовую сводку для видео-транскрипта.
- * Логируется:
- *   • ключевые параметры запроса
- *   • начало промпта и транскрипта
- *   • полный ответ модели
- * Если GEMINI возвращает ошибку или пустой текст, возвращается
- * заглушка с описанием проблемы.
+ * Генерирует аналитическую сводку (summary) по транскрипту видео.
+ * • language — язык вывода (en / ru …)
+ * • detail   — уровень детализации (concise / standard / detailed)
  */
 export async function generateSummary(
   transcript: string,
   language: string,
-  detail: string,
+  detail: string = "standard",
 ): Promise<string> {
   /* ---------- build prompt ---------- */
   const systemPrompt =
     prompts.summary +
-    `\n\nОбязательно ответь на языке: ${language}\nОбязательно ответь с таким уровнем детализации: ${detail}`;
+    `\n\nЯзык ответа: ${language}\nУровень детализации: ${detail}`;
 
   /* ---------- logging (request) ---------- */
   console.log("───────────────────────────────────────");
@@ -45,9 +42,7 @@ export async function generateSummary(
       ],
     });
 
-    if (!res.text) {
-      throw new Error("Gemini responded with empty text");
-    }
+    if (!res.text) throw new Error("Gemini responded with empty text");
 
     console.log("• Gemini response ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓");
     console.log(res.text);
